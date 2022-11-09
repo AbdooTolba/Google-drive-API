@@ -1,6 +1,7 @@
 const {google} = require('googleapis');
 const path = require('path');
 const fs = require('fs');
+const { table } = require('console');
 
 
 const CLIENT_ID = '22323826731-lb3p2vr84lultphirv72iplbc36oe18o.apps.googleusercontent.com';
@@ -15,9 +16,17 @@ const oauth2Client = new google.auth.OAuth2(
     REDIRECT_URI
 );
 
+var toJsonFile = {
+    table: []
+ };
+
+ var holdDataFor_toJsonFile_ = {
+    table: []
+};
+
+ var json = JSON.stringify(toJsonFile);
+
 oauth2Client.setCredentials({refresh_token: REFRESH_TOKEN});
-
-
 
 const drive = google.drive({
     version: "v3",
@@ -27,8 +36,35 @@ const drive = google.drive({
 
 const filePath = path.join(__dirname, 'DR.jpg');
 
+//! first time only!! vv
 
-// uploadFile();
+// toJsonFile.table.push({name: 'test', id: 'testing-also', link : 'Tesing.tesing'});
+
+
+// var json = JSON.stringify(toJsonFile);
+
+
+
+
+// fs.writeFile('myJsonFile.json', json,
+//   {
+//     encoding: "utf8",
+//     flag: "w",
+//     mode: 0o666
+//   },
+//   (err) => {
+//     if (err)
+//       console.log(err);
+//     else {
+//       console.log("File written successfully\n");
+//       console.log("The written has the following contents:");
+//       console.log(fs.readFileSync("movies.txt", "utf8"));
+//     }
+// });
+
+//! first time only!! ^^
+
+uploadFile();
 
 async function uploadFile(){
     try{
@@ -41,9 +77,13 @@ async function uploadFile(){
                 mimeType: 'image/jpg',
                 body: fs.createReadStream(filePath),
             }
-        });
-
-        console.log(response.data);
+        });        
+        
+        // toJsonFile.table[1::]['id']
+        holdDataFor_toJsonFile_.table.push({index: 0,name: 'DR_of_hearts.jpg', id: response.data.id, link : 'https://drive.google.com/uc?export=view&id='+response.data.id}); // store data to send it later to toJsonFile var
+        // console.log(holdDataFor_toJsonFile_.table[0]['id']);
+        generatePublicUrl();
+        // MAKE pubic url 
     }
     catch(error){
         console.log(error.message);
@@ -54,8 +94,9 @@ async function uploadFile(){
 // delete file
 async function deleteFile(){
     try{
+        toJsonFile.table.push({id:'1-ydgC4cGM7BZluWVHPjNAPKpTiH3b1Z2'})
         const response = await drive.files.delete({
-            fileId: '1rSmzR-MvwZ4jJtjfT5H8-MYa1JcjtzAQ'
+            fileId: toJsonFile.table[0]['id'],
         });
         console.log(response.data, response.status);
     }
@@ -107,19 +148,53 @@ async function updateFile(){
 
 // generate public url
 async function generatePublicUrl(){
+    fs.readFile('myJsonFile.json', 'utf8', function readFileCallback(err, data){
+        if (err){
+            console.log(err);
+        } else {
+        
+            toJsonFile = JSON.parse(data); // now it an object
+            toJsonFile.table.push(holdDataFor_toJsonFile_.table[0]); // add some data
+            console.log(Object.keys(toJsonFile.table).length-1);
+            toJsonFile.table[Object.keys(toJsonFile.table).length-1]['index'] = Object.keys(toJsonFile.table).length-1;
+            toJsonFile.table[Object.keys(toJsonFile.table).length-1]['name'] = holdDataFor_toJsonFile_.table[0]['name']; // add name to object from object in uploadFile()
+            toJsonFile.table[Object.keys(toJsonFile.table).length-1]['id'] = holdDataFor_toJsonFile_.table[0]['id']; // add id to object from object in uploadFile()
+            toJsonFile.table[Object.keys(toJsonFile.table).length-1]['link'] = holdDataFor_toJsonFile_.table[0]['link']; // add link to object from object in uploadFile()
+            console.table(toJsonFile.table);
+            json = JSON.stringify(toJsonFile); // convert it back to json
+        }
+    });
+    
     try{
+
         await drive.permissions.create({
-            fileId: '17GlgEPaGXbljWA5XaB9xpTQkj1_f3-Th',
+            fileId: holdDataFor_toJsonFile_.table[0]['id'],
             requestBody: {
                 role: 'reader',
                 type: 'anyone'
             }
         });
+        console.log('Public link generated');
         const result = await drive.files.get({
-            fileId: '17GlgEPaGXbljWA5XaB9xpTQkj1_f3-Th',
-            fields: 'webViewLink, webContentLink'
+            fileId: holdDataFor_toJsonFile_.table[0]['id'],
+            fields: 'webViewLink, webContentLink',
         });
+                
+        toJsonFile.table[Object.keys(toJsonFile.table).length-1]['id'],
+            fs.writeFile('myJsonFile.json', json, 'utf8',
+                  (err) => {
+                    if (err)
+                    console.log(err);
+                    else {
+                    console.log("File written successfully\n");
+                    }
+                 } ); // write it back 
+        
         console.log(result.data);
+
+
+        // https://drive.google.com/uc?export=view&id=
+        console.log("https://drive.google.com/uc?export=view&id="+toJsonFile.table[1]['link']);
     }
     catch(error){
         console.log(error.message);
@@ -127,5 +202,3 @@ async function generatePublicUrl(){
 }
  
 // generatePublicUrl();
-
-//  
