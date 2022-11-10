@@ -194,7 +194,7 @@ async function generatePublicUrl(){
 
 
         // https://drive.google.com/uc?export=view&id=
-        console.log("https://drive.google.com/uc?export=view&id="+toJsonFile.table[1]['link']);
+        console.log("https://drive.google.com/uc?export=view&id=" + holdDataFor_toJsonFile_.table[0]['link']);
     }
     catch(error){
         console.log(error.message);
